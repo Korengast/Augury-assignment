@@ -26,12 +26,14 @@ class Estimator_Stats:
 class Model_Manager:
     _CV_FOR_TUNING = 2
 
-    def __init__(self, data: Data):
+    def __init__(self, data: Data, fitted_estimator=None):
         self.__data = data
         self.models = [Model(estimator_config) for estimator_config in Estimator_Config.all()]
 
+        self.__fitted_estimator = fitted_estimator
+
     def choose_data_process(self):
-        y = self.__data.get_train_ground_truth()
+        y = self.__data.get_train_ground_truth(self.__fitted_estimator)
         df = self.__data.features_train
 
         x_train, x_validation, y_train, y_validation = train_test_split(df, y, test_size=0.25)
@@ -52,7 +54,7 @@ class Model_Manager:
             model.data_processor = best_processor
 
     def decide_if_weight_class(self):
-        y = self.__data.get_train_ground_truth()
+        y = self.__data.get_train_ground_truth(self.__fitted_estimator)
         train_df = self.__data.features_train
         sample_weight = get_sample_weight(y)
         x_train, x_validation, y_train, y_validation, weight_train, _ = self.__split_for_balanced_test(train_df, y, sample_weight, test_size=0.2)
@@ -70,7 +72,7 @@ class Model_Manager:
             model.to_weight_class = to_weight_class_decision
 
     def hyperparams_tuning(self):
-        y = self.__data.get_train_ground_truth()
+        y = self.__data.get_train_ground_truth(self.__fitted_estimator)
         x = self.__data.features_train.values
         sample_weight = get_sample_weight(y)
 
@@ -92,7 +94,7 @@ class Model_Manager:
             model.hyper_params = hyper_params
 
     def evaluate_models(self):
-        y = self.__data.get_train_ground_truth()
+        y = self.__data.get_train_ground_truth(self.__fitted_estimator)
         df = self.__data.features_train
         sample_weight = get_sample_weight(y)
 

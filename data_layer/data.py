@@ -75,5 +75,4 @@ class Data:
         return y_train_annotators
 
 
-# d = Data()
-# x_train, y_train, x_test, y_test = d.get_model_data()
+
