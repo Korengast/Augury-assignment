@@ -4,6 +4,7 @@ from io import BytesIO
 import pandas as pd
 from sklearn import preprocessing
 import numpy as np
+from sklearn.metrics import f1_score
 
 
 class Data:
@@ -31,18 +32,37 @@ class Data:
         self.label_encoder = preprocessing.LabelEncoder()
         self.label_encoder.fit(self.labels_test.values)
 
-    def get_train_ground_truth(self, smart_annotators_choosing=False):
+    def get_train_ground_truth(self, fitted_estimator=None):
         y_train_annotators = self.__extract_annotators_mat()
         votes_counter = y_train_annotators.sum(axis=1)
         all_voted_the_same = len(votes_counter[votes_counter == 5]) + len(votes_counter[votes_counter == 0])
         almost_all_voted_the_same = len(votes_counter[votes_counter >= 4]) + len(votes_counter[votes_counter <= 1])
         print(f"{round(100 * all_voted_the_same / len(votes_counter), 2)}% all annotated the same")
         print(f"{round(100 * almost_all_voted_the_same / len(votes_counter), 2)}% all annotated the same but 1")
-        if not smart_annotators_choosing:
+        if not fitted_estimator:
             # Use majority vote
             return y_train_annotators.mean(axis=1).astype(float).round()
         else:
-            return y_train_annotators.mean(axis=1).astype(float).round()  # fixme
+            all_indices = np.array(list(range(y_train_annotators.shape[0])))
+            grand_majority_indices = np.concatenate([np.where(votes_counter >= 4)[0], np.where(votes_counter <= 1)[0]])
+            ambiguous_indices = np.array([idx for idx in all_indices if idx not in grand_majority_indices])
+            ambiguous_indices.sort()
+            x_ambiguous = self.features_train.values[ambiguous_indices, :]
+
+            preds = fitted_estimator.predict(x_ambiguous)
+            annotator_scores = {}
+            for annotator_i in range(5):
+                annotator_y = y_train_annotators[ambiguous_indices, annotator_i]
+                annotator_scores[annotator_i] = f1_score(preds, annotator_y.astype(int))
+
+            total = sum(annotator_scores.values())
+            for annotator_i in annotator_scores:
+                annotator_scores[annotator_i] = annotator_scores[annotator_i] / total
+
+            y_train = np.array([0.0] * len(y_train_annotators))
+            for annotator_i in annotator_scores:
+                y_train += annotator_scores[annotator_i] * y_train_annotators[:, annotator_i].astype(float)
+            return y_train.round()
 
     def get_test_ground_truth(self):
         return self.label_encoder.transform(self.labels_test.values)

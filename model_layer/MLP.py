@@ -47,7 +47,7 @@ class MLP_Classifier(BaseEstimator, ClassifierMixin):
         x = torch.tensor(x).float()
         y = torch.tensor(y).float()
 
-        if sample_weight:
+        if sample_weight is not None:
             criterion = nn.BCELoss(weight=torch.tensor(sample_weight))
         else:
             criterion = nn.BCELoss()
