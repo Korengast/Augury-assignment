@@ -8,12 +8,12 @@ from util import get_sample_weight
 
 if __name__ == '__main__':
     data = Data()
-    # Data_Analyzer(data)
+    Data_Analyzer(data)
 
     models_manager = Model_Manager(data)
-    # models_manager.choose_data_process()
-    # models_manager.decide_if_weight_class()
-    # models_manager.hyperparams_tuning()
+    models_manager.choose_data_process()
+    models_manager.decide_if_weight_class()
+    models_manager.hyperparams_tuning()
     models_manager.evaluate_models()
 
     ensemble = Ensemble(models_manager.models)
